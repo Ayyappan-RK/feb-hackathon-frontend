@@ -37,12 +37,13 @@ class VideoEditor {
     }
   }
 
-  static Future<File?> getVideoThumbnail(String outPath, String url) async {
+  static Future<File?> getVideoThumbnail(
+      String outPath, String url, String frame) async {
     final arguments = [
       '-i',
       url,
       '-ss',
-      '00:00:04.000',
+      frame,
       '-vframes',
       '1',
       '-q:v',
@@ -108,9 +109,9 @@ class VideoEditor {
   }
 
   static Future<List> generateRandomThumbnail(
-      downloadVideoPath, filename) async {
+      downloadVideoPath, filename, frame) async {
     File? thumbnailFile =
-        await VideoEditor.getVideoThumbnail(filename, downloadVideoPath);
+        await VideoEditor.getVideoThumbnail(filename, downloadVideoPath, frame);
     return [thumbnailFile];
   }
 

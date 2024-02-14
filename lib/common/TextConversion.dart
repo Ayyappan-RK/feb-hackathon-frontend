@@ -18,7 +18,7 @@ class TextConversion {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer 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',
+              'Bearer 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',
         },
         body: json.encode({
           'model': 'gpt-3.5-turbo',
@@ -45,7 +45,7 @@ class TextConversion {
     }
   }
 
-  Future<void> _convertTextToSpeechAndSave(String text) async {
+  Future<String> _convertTextToSpeechAndSave(String text) async {
     try {
       // Get the audio file path
       final audioFilePath = await AppConstants.getAudioFilePath();
@@ -56,11 +56,12 @@ class TextConversion {
       await flutterTts.setLanguage("en-US");
       await flutterTts.setPitch(1.0);
       await flutterTts.synthesizeToFile(text, audioFilePath);
-
+      return audioFilePath;
       // Play the saved audio file
       await audioPlayer.play(AssetSource(audioFilePath));
       // await audioPlayer.play(audioFilePath, isLocal: true);
     } catch (e) {
+      return '';
       print('Error during text-to-speech: $e');
     }
   }

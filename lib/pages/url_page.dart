@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:youtube_summary_video_generation/common/TextConversion.dart';
 import 'package:youtube_summary_video_generation/common/VideoProcesor.dart';
 import 'package:youtube_summary_video_generation/common/YoutubeVideoExplorer.dart';
 import 'package:youtube_summary_video_generation/constants/constants.dart';
 import 'package:youtube_summary_video_generation/pages/video_page.dart';
 // import 'package:hackathon2/pages/video_page.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -19,12 +21,14 @@ class _HomePageState extends State<HomePage> {
   final form = GlobalKey<FormState>();
   var youtubeUrl = "";
   bool isLoading = false;
+  String? output;
   int textIndex = 0;
   List<String> loadingTexts = [
     "Fetching Subtitle, Please wait....",
-    "Loading",
-    "Please wait",
-    "Almost there"
+    "Getting Summary for your subtitle...",
+    "Analysing video...",
+    "Generating video...",
+    "video generated..."
   ];
 
   Timer? _timer;
@@ -44,20 +48,58 @@ class _HomePageState extends State<HomePage> {
         textIndex = 0;
       });
       try {
-        await YoutubeVideoExplorer.getYoutubeCaptions(videoURL: youtubeUrl);
+        String subtitleFullText =
+            await YoutubeVideoExplorer.getYoutubeCaptions(videoURL: youtubeUrl);
+        setState(() {
+          isLoading = true;
+          textIndex = 1;
+        });
+        await TextConversion().requestSummaryTextFromAI(subtitleFullText);
+        setState(() {
+          isLoading = true;
+          textIndex = 2;
+        });
         final applicationDirectory = await AppConstants.getApplicationDirectory;
-        print(YoutubeVideoExplorer.youtubeParser(youtubeUrl));
-        String videoURL = await YoutubeVideoExplorer.getVideoUrl("EngW7tLk6R8");
+
+        String videoURL = await YoutubeVideoExplorer.getVideoUrl(
+            YoutubeVideoExplorer.youtubeParser(youtubeUrl)!);
+        setState(() {
+          isLoading = true;
+          textIndex = 3;
+        });
         String downloadVideoPath = await VideoEditor.downloadVideo(videoURL,
             '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.mp4');
 
-        List outImages = await VideoEditor.generateRandomThumbnail(
-            downloadVideoPath,
-            '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg');
-        await Future.delayed(Duration(seconds: 2));
-
-        await GallerySaver.saveImage(outImages[0].path);
-        await Future.delayed(Duration(seconds: 2));
+        List outImages1 = await VideoEditor.generateRandomThumbnail(
+          downloadVideoPath,
+          '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
+          '00:00:01.000',
+        );
+        List outImages2 = await VideoEditor.generateRandomThumbnail(
+          downloadVideoPath,
+          '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
+          '00:00:10.000',
+        );
+        List outImages3 = await VideoEditor.generateRandomThumbnail(
+          downloadVideoPath,
+          '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
+          '00:00:15.000',
+        );
+        List outImages4 = await VideoEditor.generateRandomThumbnail(
+          downloadVideoPath,
+          '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
+          '00:00:30.000',
+        );
+        List outImages = [outImages1, outImages2, outImages3, outImages4];
+        setState(() {
+          isLoading = true;
+          textIndex = 4;
+        });
+        output = await fetchData(outImages);
+        setState(() {
+          isLoading = true;
+          textIndex = 5;
+        });
         // await VideoEditor.uploadGeneratedImage(outImages);
         List outImagesString = outImages.map((e) => e.path).toList();
         String outPath =
@@ -80,6 +122,36 @@ class _HomePageState extends State<HomePage> {
         });
         throw Exception(e);
       }
+    }
+  }
+
+  Future<String> fetchData(outImages) async {
+    final jsonData = {
+      "template_id": "d82db28b-a430-4ffd-9f5e-5a6726419466",
+      "modifications": {
+        "Photo 1": outImages[0],
+        "Photo 2": outImages[1],
+        "Photo 3": outImages[2],
+        "Photo 4": outImages[3],
+        "Photo 5": outImages[3],
+        "Picture": outImages[3]
+      }
+    };
+
+    final response = await http.post(
+      Uri.parse('https://api.creatomate.com/v1/renders'),
+      headers: {
+        'Authorization':
+            'Bearer c9d8e3bb0aa045e0a83ed825ff8b64185011f3c0d4f969285ba8f2bd896c412f91ea59c7e767d6aeaf8edbc0dc7c490e',
+        'Content-Type': 'application/json',
+      },
+      body: jsonData,
+    );
+
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception('Failed to load data');
     }
   }
 
@@ -151,6 +223,7 @@ class _HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(loadingTexts[textIndex]),
+                        Text(output ?? ''),
                         const SizedBox(height: 8),
                         const LinearProgressIndicator(),
                       ],
