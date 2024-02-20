@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
@@ -54,7 +55,8 @@ class _HomePageState extends State<HomePage> {
           isLoading = true;
           textIndex = 1;
         });
-        await TextConversion().requestSummaryTextFromAI(subtitleFullText);
+        String audioPath =
+            await TextConversion().requestSummaryTextFromAI(subtitleFullText);
         setState(() {
           isLoading = true;
           textIndex = 2;
@@ -70,22 +72,22 @@ class _HomePageState extends State<HomePage> {
         String downloadVideoPath = await VideoEditor.downloadVideo(videoURL,
             '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.mp4');
 
-        List outImages1 = await VideoEditor.generateRandomThumbnail(
+        File outImages1 = await VideoEditor.generateRandomThumbnail(
           downloadVideoPath,
           '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
           '00:00:01.000',
         );
-        List outImages2 = await VideoEditor.generateRandomThumbnail(
+        File outImages2 = await VideoEditor.generateRandomThumbnail(
           downloadVideoPath,
           '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
           '00:00:10.000',
         );
-        List outImages3 = await VideoEditor.generateRandomThumbnail(
+        File outImages3 = await VideoEditor.generateRandomThumbnail(
           downloadVideoPath,
           '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
           '00:00:15.000',
         );
-        List outImages4 = await VideoEditor.generateRandomThumbnail(
+        File outImages4 = await VideoEditor.generateRandomThumbnail(
           downloadVideoPath,
           '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.jpg',
           '00:00:30.000',
@@ -95,21 +97,24 @@ class _HomePageState extends State<HomePage> {
           isLoading = true;
           textIndex = 4;
         });
-        output = await fetchData(outImages);
+        // output = await fetchData(outImages);
         setState(() {
           isLoading = true;
-          textIndex = 5;
+          textIndex = 4;
         });
         // await VideoEditor.uploadGeneratedImage(outImages);
         List outImagesString = outImages.map((e) => e.path).toList();
         String outPath =
             '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}112.mp4';
+        String outPath1 =
+            '${applicationDirectory.path}/${AppConstants.generateRandomFileName()}1123.mp4';
         await VideoEditor.generateVideoFromSingleImage(
             outImagesString[0], outPath);
 
         await VideoEditor.generateVideoFromImages(outImagesString, outPath);
 
-        // GallerySaver.saveVideo(outPath);
+        await GallerySaver.saveVideo(outPath1);
+        await GallerySaver.saveVideo(outPath);
         setState(() {
           isLoading = false;
           textIndex = 0;
@@ -129,12 +134,12 @@ class _HomePageState extends State<HomePage> {
     final jsonData = {
       "template_id": "d82db28b-a430-4ffd-9f5e-5a6726419466",
       "modifications": {
-        "Photo 1": outImages[0],
-        "Photo 2": outImages[1],
-        "Photo 3": outImages[2],
-        "Photo 4": outImages[3],
-        "Photo 5": outImages[3],
-        "Picture": outImages[3]
+        "Photo 1": outImages[0].path,
+        "Photo 2": outImages[1].path,
+        "Photo 3": outImages[2].path,
+        "Photo 4": outImages[3].path,
+        "Photo 5": outImages[3].path,
+        "Picture": outImages[3].path
       }
     };
 
@@ -145,7 +150,7 @@ class _HomePageState extends State<HomePage> {
             'Bearer c9d8e3bb0aa045e0a83ed825ff8b64185011f3c0d4f969285ba8f2bd896c412f91ea59c7e767d6aeaf8edbc0dc7c490e',
         'Content-Type': 'application/json',
       },
-      body: jsonData,
+      body: jsonEncode(jsonData),
     );
 
     if (response.statusCode == 200) {

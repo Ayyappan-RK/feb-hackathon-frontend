@@ -18,7 +18,7 @@ class TextConversion {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer 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',
+              'Bearer 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',
         },
         body: json.encode({
           'model': 'gpt-3.5-turbo',
@@ -35,8 +35,7 @@ class TextConversion {
             decodedResponse['choices'][0]['message']['content'];
 
         // Convert summarized text to audio and save to a file
-        await _convertTextToSpeechAndSave(summarizedText);
-        return '';
+        return await _convertTextToSpeechAndSave(summarizedText);
       } else {
         throw Exception("Failed to summary the text");
       }

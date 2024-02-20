@@ -108,11 +108,11 @@ class VideoEditor {
     }
   }
 
-  static Future<List> generateRandomThumbnail(
+  static Future generateRandomThumbnail(
       downloadVideoPath, filename, frame) async {
     File? thumbnailFile =
         await VideoEditor.getVideoThumbnail(filename, downloadVideoPath, frame);
-    return [thumbnailFile];
+    return thumbnailFile!;
   }
 
   static generateVideo() {}
